@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LeadPulse — CRM Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   RESET & CSS VARIABLES
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0b0d14;
+  --bg2: #111420;
+  --bg3: #181c2e;
+  --surface: #1a1f35;
+  --surface2: #212740;
+  --surface3: #2a3050;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8ecf4;
+  --text2: #8892aa;
+  --text3: #5a6380;
+  --accent: #6c63ff;
+  --accent2: #8b83ff;
+  --accent-glow: rgba(108,99,255,0.35);
+  --teal: #00d4aa;
+  --teal-glow: rgba(0,212,170,0.25);
+  --amber: #ffb547;
+  --amber-glow: rgba(255,181,71,0.25);
+  --rose: #ff6b8a;
+  --rose-glow: rgba(255,107,138,0.25);
+  --cyan: #40c4ff;
+  --cyan-glow: rgba(64,196,255,0.25);
+  --green: #4ade80;
+  --col-new: #6c63ff;
+  --col-contacted: #40c4ff;
+  --col-qualified: #ffb547;
+  --col-closed: #4ade80;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,0.5);
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+[data-theme="light"] {
+  --bg: #f0f2f9;
+  --bg2: #e8eaf4;
+  --bg3: #dfe2f0;
+  --surface: #ffffff;
+  --surface2: #f5f6fe;
+  --surface3: #eceffe;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text: #1a1f35;
+  --text2: #4a5270;
+  --text3: #8892aa;
+  --accent-glow: rgba(108,99,255,0.15);
+  --teal-glow: rgba(0,180,140,0.15);
+  --amber-glow: rgba(200,130,0,0.15);
+  --rose-glow: rgba(200,50,80,0.15);
+  --cyan-glow: rgba(30,140,200,0.15);
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,0.12);
+}
+
+/* ============================================================
+   CUSTOM CURSOR
+   ============================================================ */
+body { cursor: none; }
+@media (pointer: coarse) { body { cursor: auto; } #cursor-outer, #cursor-inner { display: none !important; } }
+#cursor-outer {
+  position: fixed; top: 0; left: 0; pointer-events: none; z-index: 99999;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow), inset 0 0 8px rgba(108,99,255,0.1);
+  transform: translate(-50%,-50%);
+  transition: width 0.25s, height 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+#cursor-outer::before, #cursor-outer::after {
+  content: ''; position: absolute; background: var(--accent);
+  opacity: 0.5; transition: opacity 0.2s;
+}
+#cursor-outer::before { width: 1px; height: 10px; top: -14px; left: 50%; transform: translateX(-50%); }
+#cursor-outer::after  { width: 10px; height: 1px; left: -14px; top: 50%; transform: translateY(-50%); }
+#cursor-inner {
+  position: fixed; top: 0; left: 0; pointer-events: none; z-index: 100000;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  transform: translate(-50%,-50%);
+  transition: width 0.15s, height 0.15s, background 0.15s;
+}
+body.cursor-hover #cursor-outer {
+  width: 52px; height: 52px;
+  border-color: var(--teal);
+  box-shadow: 0 0 24px var(--teal-glow), 0 0 48px var(--teal-glow);
+}
+body.cursor-hover #cursor-inner { background: var(--teal); box-shadow: 0 0 10px var(--teal); }
+body.cursor-click #cursor-outer {
+  width: 64px; height: 64px; opacity: 0.4;
+  border-color: var(--amber);
+}
+body.cursor-click #cursor-inner { width: 3px; height: 3px; }
+.ripple-burst {
+  position: fixed; pointer-events: none; z-index: 99998;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: transparent;
+  border: 2px solid var(--accent);
+  transform: translate(-50%,-50%) scale(1);
+  animation: rippleBurst 0.5s ease-out forwards;
+}
+@keyframes rippleBurst {
+  0%   { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(8); opacity: 0; }
+}
+
+/* ============================================================
+   BASE LAYOUT
+   ============================================================ */
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+.app-wrap { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 99px; }
+
+/* ============================================================
+   TOPBAR / NAV
+   ============================================================ */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 900;
+  backdrop-filter: blur(12px);
+}
+.topbar-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-weight: 800; font-size: 1.4rem;
+  color: var(--text); letter-spacing: -0.5px;
+}
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--teal));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; box-shadow: 0 0 16px var(--accent-glow);
+}
+.topbar-nav { display: flex; gap: 4px; }
+.nav-btn {
+  padding: 7px 16px; border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 500;
+  color: var(--text2); background: transparent; border: none;
+  cursor: none; transition: var(--transition);
+}
+.nav-btn:hover, .nav-btn.active {
+  background: var(--surface); color: var(--text);
+}
+.nav-btn.active { color: var(--accent); }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.btn-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border);
+  cursor: none; transition: var(--transition); color: var(--text2);
+  font-size: 1rem;
+}
+.btn-icon:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+.btn-primary {
+  padding: 8px 18px; border-radius: var(--radius-sm);
+  background: var(--accent); color: #fff; border: none;
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
+  cursor: none; transition: var(--transition);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+.btn-primary:hover { background: var(--accent2); box-shadow: 0 0 24px var(--accent-glow); transform: translateY(-1px); }
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+.view { display: none; padding: 28px; max-width: 1600px; margin: 0 auto; width: 100%; }
+.view.active { display: block; }
+
+/* ============================================================
+   DASHBOARD SUMMARY CARDS
+   ============================================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+  gap: 16px; margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  position: relative; overflow: hidden;
+  transition: var(--transition);
+  animation: fadeUp 0.4s ease both;
+}
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--border2); }
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--card-accent, var(--accent));
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.stat-card .glow {
+  position: absolute; top: -20px; right: -20px;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--card-accent, var(--accent));
+  opacity: 0.08; filter: blur(20px);
+}
+.stat-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--card-accent-bg, var(--surface2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; margin-bottom: 14px;
+  color: var(--card-accent, var(--accent));
+}
+.stat-label { font-size: 0.75rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500; margin-bottom: 6px; }
+.stat-value {
+  font-family: var(--font-display); font-size: 2rem; font-weight: 700;
+  color: var(--text); line-height: 1;
+}
+.stat-sub { font-size: 0.75rem; color: var(--text3); margin-top: 6px; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   FILTER BAR
+   ============================================================ */
+.filter-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 24px; flex-wrap: wrap;
+}
+.filter-label { font-size: 0.78rem; color: var(--text3); font-weight: 500; margin-right: 4px; }
+.filter-btn {
+  padding: 6px 14px; border-radius: 99px;
+  font-size: 0.78rem; font-weight: 500; font-family: var(--font-body);
+  border: 1px solid var(--border2); background: var(--surface);
+  color: var(--text2); cursor: none; transition: var(--transition);
+  display: flex; align-items: center; gap: 6px;
+}
+.filter-btn:hover { background: var(--surface2); color: var(--text); }
+.filter-btn.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+.filter-btn .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.7; }
+.filter-spacer { flex: 1; }
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 6px 12px;
+}
+.search-box input {
+  background: none; border: none; outline: none; font-family: var(--font-body);
+  font-size: 0.82rem; color: var(--text); width: 180px;
+}
+.search-box input::placeholder { color: var(--text3); }
+.search-box span { color: var(--text3); font-size: 0.9rem; }
+
+/* ============================================================
+   KANBAN BOARD
+   ============================================================ */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 16px; align-items: start;
+}
+.kanban-col {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  min-height: 300px;
+  transition: var(--transition);
+}
+.kanban-col.drag-over { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+.col-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.col-title {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-display); font-size: 0.88rem; font-weight: 700;
+}
+.col-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+.col-count {
+  font-size: 0.72rem; font-weight: 600;
+  background: var(--surface2); color: var(--text2);
+  border-radius: 99px; padding: 2px 8px;
+}
+.col-add-btn {
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
+  background: var(--surface2); border: 1px dashed var(--border2);
+  color: var(--text3); cursor: none; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.col-add-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); border-style: solid; }
+.cards-list { display: flex; flex-direction: column; gap: 10px; min-height: 40px; }
+
+/* ============================================================
+   LEAD CARD
+   ============================================================ */
+.lead-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  cursor: grab; transition: var(--transition);
+  position: relative; overflow: hidden;
+  animation: fadeUp 0.3s ease both;
+}
+.lead-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--card-color, var(--accent));
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+.lead-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border2); }
+.lead-card.dragging { opacity: 0.5; cursor: grabbing; transform: rotate(2deg) scale(1.02); }
+.lead-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.lead-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 0.85rem; font-weight: 700;
+  color: #fff; flex-shrink: 0;
+  background: var(--card-color, var(--accent));
+  box-shadow: 0 0 12px var(--card-glow, var(--accent-glow));
+}
+.lead-name {
+  font-family: var(--font-display); font-size: 0.9rem; font-weight: 700;
+  color: var(--text); margin-left: 10px; flex: 1;
+}
+.lead-actions { display: flex; gap: 4px; opacity: 0; transition: var(--transition); }
+.lead-card:hover .lead-actions { opacity: 1; }
+.action-btn {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--surface2); border: none;
+  color: var(--text3); cursor: none; font-size: 0.75rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.action-btn:hover { background: var(--accent); color: #fff; }
+.lead-contact { font-size: 0.72rem; color: var(--text3); margin-bottom: 8px; display: flex; flex-direction: column; gap: 2px; }
+.lead-contact span { display: flex; align-items: center; gap: 5px; }
+.lead-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.tag {
+  font-size: 0.65rem; font-weight: 600; padding: 2px 7px; border-radius: 99px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.tag-source { background: var(--surface3); color: var(--text2); }
+.tag-service { background: rgba(108,99,255,0.15); color: var(--accent2); }
+.lead-stage-select {
+  width: 100%; padding: 5px 8px; border-radius: var(--radius-sm);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text2); font-family: var(--font-body); font-size: 0.72rem;
+  cursor: none; outline: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238892aa' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  padding-right: 24px;
+}
+.lead-stage-select:focus { border-color: var(--accent); }
+
+/* ============================================================
+   AI FOLLOW-UP PANEL
+   ============================================================ */
+.panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.panel-title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; }
+.panel-subtitle { font-size: 0.82rem; color: var(--text3); margin-top: 2px; }
+.followup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.followup-form-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1/-1; }
+.form-label { font-size: 0.75rem; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-input, .form-select, .form-textarea {
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--font-body); font-size: 0.82rem;
+  outline: none; transition: var(--transition);
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.form-select { cursor: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238892aa' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+.form-textarea { resize: vertical; min-height: 70px; }
+.tone-length-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.option-group { display: flex; flex-direction: column; gap: 6px; }
+.option-group label { font-size: 0.75rem; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.option-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.option-pill {
+  padding: 5px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;
+  border: 1px solid var(--border2); background: var(--bg3); color: var(--text2);
+  cursor: none; transition: var(--transition);
+}
+.option-pill:hover { background: var(--surface2); color: var(--text); }
+.option-pill.selected { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.generate-btn {
+  width: 100%; margin-top: 18px; padding: 12px;
+  background: linear-gradient(135deg, var(--accent), #9b6bff);
+  border: none; border-radius: var(--radius-sm);
+  color: #fff; font-family: var(--font-display); font-size: 0.9rem; font-weight: 700;
+  cursor: none; transition: var(--transition);
+  box-shadow: 0 0 20px var(--accent-glow);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.generate-btn:hover { transform: translateY(-2px); box-shadow: 0 0 32px var(--accent-glow); }
+.generate-btn.loading { opacity: 0.7; cursor: wait; }
+.followup-output-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.output-placeholder {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px;
+  color: var(--text3); font-size: 0.85rem; text-align: center;
+  min-height: 200px;
+}
+.output-placeholder .big-icon { font-size: 3rem; opacity: 0.3; }
+.message-output {
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 16px;
+  font-size: 0.84rem; line-height: 1.7; color: var(--text2);
+  white-space: pre-wrap; flex: 1; min-height: 180px;
+  display: none;
+}
+.output-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.send-btn {
+  flex: 1; padding: 9px 14px; border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 0.8rem; font-weight: 600;
+  border: none; cursor: none; transition: var(--transition);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.send-btn.whatsapp { background: #25d366; color: #fff; }
+.send-btn.whatsapp:hover { background: #1da851; }
+.send-btn.email { background: var(--accent); color: #fff; box-shadow: 0 0 10px var(--accent-glow); }
+.send-btn.email:hover { background: var(--accent2); }
+.send-btn.copy { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+.send-btn.copy:hover { background: var(--surface3); }
+.send-btn.regen { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+.send-btn.regen:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ============================================================
+   LEAD CAPTURE PAGE
+   ============================================================ */
+#view-capture {
+  max-width: 700px; margin: 0 auto;
+}
+.ad-hero {
+  text-align: center; padding: 48px 24px; 
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.ad-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, var(--accent-glow) 0%, transparent 70%);
+}
+.ad-hero h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 800; margin-bottom: 10px; position: relative; }
+.ad-hero p { color: var(--text2); font-size: 0.9rem; margin-bottom: 20px; position: relative; }
+.ad-btn {
+  padding: 14px 36px; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent), var(--teal));
+  color: #fff; border: none; font-family: var(--font-display);
+  font-size: 1rem; font-weight: 700; cursor: none; transition: var(--transition);
+  box-shadow: 0 0 24px var(--accent-glow); position: relative;
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%,100% { box-shadow: 0 0 24px var(--accent-glow); }
+  50%     { box-shadow: 0 0 48px var(--accent-glow), 0 0 80px var(--teal-glow); }
+}
+.capture-form-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px; display: none;
+}
+.capture-form-card.visible { display: block; animation: fadeUp 0.4s ease; }
+.capture-form-card h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+.capture-form-card p { font-size: 0.82rem; color: var(--text3); margin-bottom: 20px; }
+.capture-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* ============================================================
+   AI INSIGHTS PANEL
+   ============================================================ */
+.insights-teaser {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 20px;
+  position: relative; overflow: hidden;
+}
+.insights-teaser::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--accent-glow), var(--teal-glow));
+  opacity: 0.3;
+}
+.insights-teaser .icon-big { font-size: 2.8rem; position: relative; }
+.insights-teaser .text { position: relative; }
+.insights-teaser h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; }
+.insights-teaser p { font-size: 0.8rem; color: var(--text3); margin-top: 2px; }
+.badge-soon {
+  margin-left: auto; position: relative;
+  padding: 5px 12px; border-radius: 99px;
+  border: 1px solid var(--accent); color: var(--accent);
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; white-space: nowrap;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 8000;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 28px;
+  width: 100%; max-width: 540px;
+  animation: fadeUp 0.25s ease;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; }
+.modal-close { background: none; border: none; color: var(--text3); font-size: 1.3rem; cursor: none; transition: var(--transition); }
+.modal-close:hover { color: var(--text); }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.modal-footer { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
+.btn-secondary {
+  padding: 9px 20px; border-radius: var(--radius-sm);
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text2); font-family: var(--font-body); font-size: 0.82rem;
+  font-weight: 500; cursor: none; transition: var(--transition);
+}
+.btn-secondary:hover { background: var(--surface3); color: var(--text); }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toast-container {
+  position: fixed; bottom: 28px; right: 28px;
+  display: flex; flex-direction: column; gap: 10px;
+  z-index: 99000;
+}
+.toast {
+  padding: 12px 18px; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--border2);
+  color: var(--text); font-size: 0.82rem; font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; gap: 8px;
+  animation: slideInRight 0.3s ease;
+  max-width: 300px;
+}
+.toast.success { border-color: var(--green); }
+.toast.success .toast-dot { background: var(--green); }
+.toast.info { border-color: var(--accent); }
+.toast.info .toast-dot { background: var(--accent); }
+.toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ============================================================
+   SECTION HEADERS
+   ============================================================ */
+.section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.section-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; }
+.section-sub { font-size: 0.78rem; color: var(--text3); margin-top: 2px; }
+
+/* ============================================================
+   SOURCE ICONS
+   ============================================================ */
+.src-google { color: #ea4335; }
+.src-instagram { color: #e1306c; }
+.src-website { color: var(--cyan); }
+.src-referral { color: var(--amber); }
+.src-other { color: var(--text3); }
+
+/* ============================================================
+   RESPONSIVENESS
+   ============================================================ */
+@media (max-width: 1100px) {
+  .kanban-board { grid-template-columns: repeat(2, 1fr); }
+  .followup-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .kanban-board { grid-template-columns: 1fr; overflow-x: auto; }
+  .topbar { padding: 12px 16px; }
+  .topbar-nav { display: none; }
+  .view { padding: 16px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid, .modal-grid, .capture-grid { grid-template-columns: 1fr; }
+  .ad-hero h1 { font-size: 1.4rem; }
+}
+@media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<!-- CUSTOM CURSOR -->
+<div id="cursor-outer"></div>
+<div id="cursor-inner"></div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- MODAL: ADD/EDIT LEAD -->
+<div class="modal-overlay" id="lead-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">➕ Add New Lead</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-grid">
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input class="form-input" id="m-name" placeholder="e.g. Priya Sharma" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input class="form-input" id="m-email" type="email" placeholder="priya@example.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone *</label>
+        <input class="form-input" id="m-phone" placeholder="+91 98765 43210" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Company</label>
+        <input class="form-input" id="m-company" placeholder="Company Name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Source Channel *</label>
+        <select class="form-select" id="m-source">
+          <option value="Google Ads">Google Ads</option>
+          <option value="Instagram">Instagram</option>
+          <option value="Website">Website</option>
+          <option value="Referral">Referral</option>
+          <option value="Others">Others</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Service Interested In *</label>
+        <select class="form-select" id="m-service">
+          <option value="SEO">SEO</option>
+          <option value="Social Media">Social Media Marketing</option>
+          <option value="Web Development">Web Development</option>
+          <option value="PPC Ads">PPC / Paid Ads</option>
+          <option value="Content Marketing">Content Marketing</option>
+          <option value="Branding">Branding</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Stage</label>
+        <select class="form-select" id="m-stage">
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="qualified">Qualified</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input class="form-input" id="m-notes" placeholder="Optional notes..." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveModalLead()">💾 Save Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP WRAP -->
+<div class="app-wrap">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-icon">⚡</div>
+      LeadPulse
+    </div>
+    <nav class="topbar-nav">
+      <button class="nav-btn active" onclick="switchView('dashboard', this)">📊 Dashboard</button>
+      <button class="nav-btn" onclick="switchView('followup', this)">🤖 AI Follow-Up</button>
+      <button class="nav-btn" onclick="switchView('capture', this)">🌐 Lead Capture</button>
+    </nav>
+    <div class="topbar-actions">
+      <button class="btn-icon" title="Toggle Theme" onclick="toggleTheme()">🌙</button>
+      <button class="btn-primary" onclick="openModal()">+ New Lead</button>
+    </div>
+  </header>
+
+  <!-- VIEW: DASHBOARD -->
+  <main class="view active" id="view-dashboard">
+    <!-- AI Insights Teaser -->
+    <div class="insights-teaser">
+      <div class="icon-big">🧠</div>
+      <div class="text">
+        <h3>AI Insights Engine</h3>
+        <p>Predictive lead scoring, automated segmentation &amp; smart follow-up suggestions powered by machine learning.</p>
+      </div>
+      <div class="badge-soon">✦ Coming Soon</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <span class="filter-label">Filter by source:</span>
+      <button class="filter-btn active" data-filter="All" onclick="setFilter(this)"><span class="dot"></span>All</button>
+      <button class="filter-btn" data-filter="Google Ads" onclick="setFilter(this)">🟥 Google Ads</button>
+      <button class="filter-btn" data-filter="Instagram" onclick="setFilter(this)">📸 Instagram</button>
+      <button class="filter-btn" data-filter="Website" onclick="setFilter(this)">🌐 Website</button>
+      <button class="filter-btn" data-filter="Referral" onclick="setFilter(this)">🤝 Referral</button>
+      <button class="filter-btn" data-filter="Others" onclick="setFilter(this)">⋯ Others</button>
+      <div class="filter-spacer"></div>
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search-input" placeholder="Search leads..." oninput="renderBoard()" />
+      </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="section-head">
+      <div>
+        <div class="section-title">Lead Pipeline</div>
+        <div class="section-sub">Drag &amp; drop to move leads between stages</div>
+      </div>
+    </div>
+    <div class="kanban-board" id="kanban-board">
+      <div class="kanban-col" id="col-new" data-stage="new" ondragover="onDragOver(event)" ondrop="onDrop(event,'new')" ondragleave="onDragLeave(event)">
+        <div class="col-header">
+          <div class="col-title">
+            <span class="col-dot" style="color:var(--col-new);background:var(--col-new)"></span>
+            <span style="color:var(--col-new)">New</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="col-count" id="cnt-new">0</span>
+            <button class="col-add-btn" onclick="openModal('new')" title="Add lead">+</button>
+          </div>
+        </div>
+        <div class="cards-list" id="list-new"></div>
+      </div>
+      <div class="kanban-col" id="col-contacted" data-stage="contacted" ondragover="onDragOver(event)" ondrop="onDrop(event,'contacted')" ondragleave="onDragLeave(event)">
+        <div class="col-header">
+          <div class="col-title">
+            <span class="col-dot" style="color:var(--col-contacted);background:var(--col-contacted)"></span>
+            <span style="color:var(--col-contacted)">Contacted</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="col-count" id="cnt-contacted">0</span>
+            <button class="col-add-btn" onclick="openModal('contacted')">+</button>
+          </div>
+        </div>
+        <div class="cards-list" id="list-contacted"></div>
+      </div>
+      <div class="kanban-col" id="col-qualified" data-stage="qualified" ondragover="onDragOver(event)" ondrop="onDrop(event,'qualified')" ondragleave="onDragLeave(event)">
+        <div class="col-header">
+          <div class="col-title">
+            <span class="col-dot" style="color:var(--col-qualified);background:var(--col-qualified)"></span>
+            <span style="color:var(--col-qualified)">Qualified</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="col-count" id="cnt-qualified">0</span>
+            <button class="col-add-btn" onclick="openModal('qualified')">+</button>
+          </div>
+        </div>
+        <div class="cards-list" id="list-qualified"></div>
+      </div>
+      <div class="kanban-col" id="col-closed" data-stage="closed" ondragover="onDragOver(event)" ondrop="onDrop(event,'closed')" ondragleave="onDragLeave(event)">
+        <div class="col-header">
+          <div class="col-title">
+            <span class="col-dot" style="color:var(--col-closed);background:var(--col-closed)"></span>
+            <span style="color:var(--col-closed)">Closed</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="col-count" id="cnt-closed">0</span>
+            <button class="col-add-btn" onclick="openModal('closed')">+</button>
+          </div>
+        </div>
+        <div class="cards-list" id="list-closed"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW: AI FOLLOW-UP -->
+  <main class="view" id="view-followup">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">🤖 AI Follow-Up Generator</div>
+        <div class="panel-subtitle">Generate personalized, context-aware follow-up messages instantly</div>
+      </div>
+    </div>
+    <div class="followup-grid">
+      <!-- Input Form -->
+      <div class="followup-form-section">
+        <div class="section-title" style="margin-bottom:16px;font-size:0.95rem">📋 Lead Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Lead Name *</label>
+            <input class="form-input" id="f-name" placeholder="e.g. Rahul Mehta" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email *</label>
+            <input class="form-input" id="f-email" type="email" placeholder="rahul@company.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone (with country code)</label>
+            <input class="form-input" id="f-phone" placeholder="+91 98765 43210" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Company Name</label>
+            <input class="form-input" id="f-company" placeholder="Tech Startup Pvt Ltd" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Industry</label>
+            <select class="form-select" id="f-industry">
+              <option value="Technology">Technology</option>
+              <option value="E-Commerce">E-Commerce</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Real Estate">Real Estate</option>
+              <option value="Education">Education</option>
+              <option value="Finance">Finance</option>
+              <option value="Hospitality">Hospitality</option>
+              <option value="Retail">Retail</option>
+              <option value="Manufacturing">Manufacturing</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lead Source</label>
+            <select class="form-select" id="f-source">
+              <option value="Facebook Ads">Facebook Ads</option>
+              <option value="Google Ads">Google Ads</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Website">Website</option>
+              <option value="Referral">Referral</option>
+              <option value="Cold Email">Cold Email</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Service Interested In</label>
+            <select class="form-select" id="f-service">
+              <option value="SEO">SEO</option>
+              <option value="Social Media Marketing">Social Media Marketing</option>
+              <option value="Web Development">Web Development</option>
+              <option value="PPC Ads">PPC / Paid Ads</option>
+              <option value="Content Marketing">Content Marketing</option>
+              <option value="Branding">Branding</option>
+              <option value="Full Digital Marketing">Full Digital Marketing</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Previous Interaction</label>
+            <select class="form-select" id="f-prev">
+              <option value="None – first contact">None – first contact</option>
+              <option value="Attended a webinar">Attended a webinar</option>
+              <option value="Downloaded a resource">Downloaded a resource</option>
+              <option value="Replied to an email">Replied to an email</option>
+              <option value="Had a call">Had a discovery call</option>
+              <option value="Requested a proposal">Requested a proposal</option>
+              <option value="Went silent after quoting">Went silent after quoting</option>
+            </select>
+          </div>
+        </div>
+        <div class="tone-length-grid">
+          <div class="option-group">
+            <label>Tone</label>
+            <div class="option-pills">
+              <button class="option-pill selected" data-group="tone" onclick="selectPill(this)">😊 Friendly</button>
+              <button class="option-pill" data-group="tone" onclick="selectPill(this)">💼 Professional</button>
+              <button class="option-pill" data-group="tone" onclick="selectPill(this)">🔥 Persuasive</button>
+            </div>
+          </div>
+          <div class="option-group">
+            <label>Length</label>
+            <div class="option-pills">
+              <button class="option-pill selected" data-group="length" onclick="selectPill(this)">Short</button>
+              <button class="option-pill" data-group="length" onclick="selectPill(this)">Medium</button>
+              <button class="option-pill" data-group="length" onclick="selectPill(this)">Long</button>
+            </div>
+          </div>
+        </div>
+        <button class="generate-btn" onclick="generateMessage()">
+          <span id="gen-btn-text">⚡ Generate Follow-Up Message</span>
+        </button>
+      </div>
+
+      <!-- Output Section -->
+      <div class="followup-output-section">
+        <div class="section-title" style="font-size:0.95rem">📤 Generated Message</div>
+        <div class="output-placeholder" id="output-placeholder">
+          <div class="big-icon">✉️</div>
+          <div>Fill in the details and click<br><strong>Generate Follow-Up</strong> to create your message</div>
+        </div>
+        <div class="message-output" id="message-output"></div>
+        <div class="output-actions" id="output-actions" style="display:none">
+          <button class="send-btn copy" onclick="copyMessage()">📋 Copy</button>
+          <button class="send-btn regen" onclick="generateMessage()">🔄 Regenerate</button>
+          <button class="send-btn whatsapp" onclick="sendWhatsApp()">📲 WhatsApp</button>
+          <button class="send-btn email" onclick="sendEmail()">📧 Email</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW: LEAD CAPTURE -->
+  <main class="view" id="view-capture">
+    <div class="ad-hero">
+      <div style="position:relative">
+        <div style="font-size:0.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📣 Sponsored · Google Ads</div>
+        <h1>🚀 Grow Your Business with<br>Digital Marketing That Works</h1>
+        <p>Get a <strong>FREE audit</strong> of your current marketing strategy. No commitments.</p>
+        <button class="ad-btn" onclick="showCaptureForm()">👉 Claim Your Free Audit Now</button>
+      </div>
+    </div>
+
+    <div class="capture-form-card" id="capture-form-card">
+      <h2>🎯 Get Your Free Marketing Audit</h2>
+      <p>Fill in the form below and we'll get back to you within 24 hours.</p>
+      <div class="capture-grid">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input class="form-input" id="c-name" placeholder="Your full name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input class="form-input" id="c-email" type="email" placeholder="you@company.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input class="form-input" id="c-phone" placeholder="+91 98765 43210" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company</label>
+          <input class="form-input" id="c-company" placeholder="Your company" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Service You Need</label>
+          <select class="form-select" id="c-service">
+            <option>SEO</option>
+            <option>Social Media Marketing</option>
+            <option>Web Development</option>
+            <option>PPC Ads</option>
+            <option>Content Marketing</option>
+            <option>Branding</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">How Did You Find Us?</label>
+          <select class="form-select" id="c-source">
+            <option>Google Ads</option>
+            <option>Instagram</option>
+            <option>Website</option>
+            <option>Referral</option>
+            <option>Others</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:18px">
+        <button class="btn-primary" style="width:100%;padding:12px;font-size:0.9rem" onclick="submitCaptureLead()">
+          ✅ Submit &amp; Claim Free Audit
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   CUSTOM CURSOR SYSTEM
+   ============================================================ */
+const curOut = document.getElementById('cursor-outer');
+const curIn  = document.getElementById('cursor-inner');
+let mouseX = 0, mouseY = 0;
+let outX = 0, outY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  curIn.style.left = mouseX + 'px';
+  curIn.style.top  = mouseY + 'px';
+});
+
+function animateCursor() {
+  outX += (mouseX - outX) * 0.12;
+  outY += (mouseY - outY) * 0.12;
+  curOut.style.left = outX + 'px';
+  curOut.style.top  = outY + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+
+document.addEventListener('mouseover', e => {
+  if (e.target.closest('a,button,.clickable,.lead-card,.filter-btn,.option-pill,.send-btn,.nav-btn,.action-btn,.col-add-btn,.ad-btn,.generate-btn')) {
+    document.body.classList.add('cursor-hover');
+  }
+});
+document.addEventListener('mouseout', e => {
+  if (e.target.closest('a,button,.clickable,.lead-card,.filter-btn,.option-pill,.send-btn,.nav-btn,.action-btn,.col-add-btn,.ad-btn,.generate-btn')) {
+    document.body.classList.remove('cursor-hover');
+  }
+});
+
+document.addEventListener('mousedown', e => {
+  document.body.classList.add('cursor-click');
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple-burst';
+  ripple.style.left = e.clientX + 'px';
+  ripple.style.top  = e.clientY + 'px';
+  document.body.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+});
+document.addEventListener('mouseup', () => {
+  document.body.classList.remove('cursor-click');
+});
+
+/* ============================================================
+   DATA & STORAGE
+   ============================================================ */
+const STORAGE_KEY = 'leadpulse_leads_v2';
+const THEME_KEY   = 'leadpulse_theme';
+
+function getLeads() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveLeads(leads) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+}
+
+// Seed some demo data if empty
+function seedDemoData() {
+  if (getLeads().length) return;
+  const demos = [
+    { id: uid(), name: 'Priya Sharma', email: 'priya@techno.in', phone: '+91 98765 43210', company: 'Techno Pvt', source: 'Google Ads', service: 'SEO', stage: 'new', notes: '' },
+    { id: uid(), name: 'Ravi Kumar', email: 'ravi@startup.io', phone: '+91 88234 56789', company: 'StartupIO', source: 'Instagram', service: 'Social Media', stage: 'contacted', notes: 'Very interested' },
+    { id: uid(), name: 'Anjali Nair', email: 'anjali@nairco.com', phone: '+91 77890 12345', company: 'Nair Co', source: 'Referral', service: 'Web Development', stage: 'qualified', notes: '' },
+    { id: uid(), name: 'Sam Wilson', email: 'sam@digitaledge.co', phone: '+44 7700 900123', company: 'DigitalEdge', source: 'Website', service: 'PPC Ads', stage: 'closed', notes: 'Signed up for 6 months' },
+    { id: uid(), name: 'Meena Patel', email: 'meena@fashionhub.in', phone: '+91 99001 23456', company: 'FashionHub', source: 'Google Ads', service: 'Branding', stage: 'new', notes: '' },
+    { id: uid(), name: 'Arjun Das', email: 'arjun@greentech.io', phone: '+91 80098 76543', company: 'GreenTech', source: 'Instagram', service: 'Content Marketing', stage: 'contacted', notes: 'Called once' },
+    { id: uid(), name: 'Lisa Chen', email: 'lisa@globex.com', phone: '+1 415 555 0123', company: 'Globex Corp', source: 'Others', service: 'SEO', stage: 'qualified', notes: '' },
+    { id: uid(), name: 'Vikram Singh', email: 'v.singh@ideabox.in', phone: '+91 92345 67890', company: 'IdeaBox', source: 'Referral', service: 'Web Development', stage: 'closed', notes: 'Won ✓' },
+  ];
+  saveLeads(demos);
+}
+
+function uid() { return 'ld_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let activeFilter = 'All';
+let editingLeadId = null;
+let defaultStage = 'new';
+let dragLeadId = null;
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function showToast(msg, type = 'success') {
+  const tc = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<div class="toast-dot"></div>${msg}`;
+  tc.appendChild(t);
+  setTimeout(() => { t.style.transition = 'opacity 0.3s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.querySelector('[title="Toggle Theme"]').textContent = isDark ? '🌑' : '🌙';
+  localStorage.setItem(THEME_KEY, isDark ? 'light' : 'dark');
+}
+function initTheme() {
+  const t = localStorage.getItem(THEME_KEY) || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  document.querySelector('[title="Toggle Theme"]').textContent = t === 'dark' ? '🌙' : '🌑';
+}
+
+/* ============================================================
+   VIEW SWITCHING
+   ============================================================ */
+function switchView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'dashboard') renderBoard();
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+function renderStats() {
+  const leads = getLeads();
+  const total = leads.length;
+  const closed = leads.filter(l => l.stage === 'closed').length;
+  const channels = { 'Google Ads': 0, 'Instagram': 0, 'Website': 0, 'Referral': 0, 'Others': 0 };
+  leads.forEach(l => { if (channels[l.source] !== undefined) channels[l.source]++; else channels['Others']++; });
+
+  const cards = [
+    { label: 'Total Leads', value: total, icon: '👥', accent: 'var(--accent)', bgAccent: 'rgba(108,99,255,0.1)', sub: 'All pipeline leads' },
+    { label: 'Conversions', value: closed, icon: '✅', accent: 'var(--green)', bgAccent: 'rgba(74,222,128,0.1)', sub: `${total ? Math.round(closed/total*100) : 0}% conversion rate` },
+    { label: 'Google Ads', value: channels['Google Ads'], icon: '🔴', accent: '#ea4335', bgAccent: 'rgba(234,67,53,0.1)', sub: 'From paid search' },
+    { label: 'Instagram', value: channels['Instagram'], icon: '📸', accent: '#e1306c', bgAccent: 'rgba(225,48,108,0.1)', sub: 'Social media leads' },
+    { label: 'Website', value: channels['Website'], icon: '🌐', accent: 'var(--cyan)', bgAccent: 'rgba(64,196,255,0.1)', sub: 'Organic / direct' },
+    { label: 'Referrals', value: channels['Referral'], icon: '🤝', accent: 'var(--amber)', bgAccent: 'rgba(255,181,71,0.1)', sub: 'Word of mouth' },
+  ];
+
+  const grid = document.getElementById('stats-grid');
+  grid.innerHTML = cards.map((c, i) => `
+    <div class="stat-card" style="--card-accent:${c.accent};--card-accent-bg:${c.bgAccent};animation-delay:${i*0.06}s">
+      <div class="glow"></div>
+      <div class="stat-icon">${c.icon}</div>
+      <div class="stat-label">${c.label}</div>
+      <div class="stat-value" id="sv-${i}">0</div>
+      <div class="stat-sub">${c.sub}</div>
+    </div>
+  `).join('');
+
+  // Animate numbers
+  cards.forEach((c, i) => {
+    const el = document.getElementById(`sv-${i}`);
+    let start = 0;
+    const end = c.value;
+    const duration = 600;
+    const step = end / (duration / 16);
+    const timer = setInterval(() => {
+      start = Math.min(start + step, end);
+      el.textContent = Math.round(start);
+      if (start >= end) clearInterval(timer);
+    }, 16);
+  });
+}
+
+/* ============================================================
+   KANBAN RENDER
+   ============================================================ */
+const stageConfig = {
+  new:       { color: 'var(--col-new)',       glow: 'var(--accent-glow)' },
+  contacted: { color: 'var(--col-contacted)', glow: 'var(--cyan-glow)' },
+  qualified: { color: 'var(--col-qualified)', glow: 'var(--amber-glow)' },
+  closed:    { color: 'var(--col-closed)',    glow: 'var(--teal-glow)' },
+};
+
+const sourceIcon = {
+  'Google Ads': '🟥', 'Instagram': '📸', 'Website': '🌐', 'Referral': '🤝', 'Others': '⋯'
+};
+
+function renderBoard() {
+  let leads = getLeads();
+  const q = (document.getElementById('search-input')?.value || '').toLowerCase();
+
+  if (activeFilter !== 'All') leads = leads.filter(l => l.source === activeFilter);
+  if (q) leads = leads.filter(l =>
+    l.name.toLowerCase().includes(q) ||
+    l.email.toLowerCase().includes(q) ||
+    l.company?.toLowerCase().includes(q)
+  );
+
+  const stages = ['new', 'contacted', 'qualified', 'closed'];
+  stages.forEach(stage => {
+    const list = document.getElementById('list-' + stage);
+    const cnt  = document.getElementById('cnt-' + stage);
+    const stagLeads = leads.filter(l => l.stage === stage);
+    cnt.textContent = stagLeads.length;
+    list.innerHTML = stagLeads.map(l => buildCard(l)).join('');
+  });
+
+  renderStats();
+  attachCardDrag();
+}
+
+function buildCard(l) {
+  const cfg = stageConfig[l.stage] || stageConfig.new;
+  const initials = l.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  return `
+    <div class="lead-card" draggable="true" data-id="${l.id}"
+         style="--card-color:${cfg.color};--card-glow:${cfg.glow}">
+      <div class="lead-card-top">
+        <div class="lead-avatar" style="background:${cfg.color};box-shadow:0 0 12px ${cfg.glow}">${initials}</div>
+        <div class="lead-name" style="margin-left:10px">${escHtml(l.name)}</div>
+        <div class="lead-actions">
+          <button class="action-btn" title="Edit" onclick="editLead('${l.id}')">✏️</button>
+          <button class="action-btn" title="Follow-up" onclick="prefillFollowUp('${l.id}')">📨</button>
+          <button class="action-btn" title="Delete" onclick="deleteLead('${l.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="lead-contact">
+        <span>📧 ${escHtml(l.email)}</span>
+        <span>📱 ${escHtml(l.phone || '—')}</span>
+        ${l.company ? `<span>🏢 ${escHtml(l.company)}</span>` : ''}
+      </div>
+      <div class="lead-tags">
+        <span class="tag tag-source">${sourceIcon[l.source] || '⋯'} ${escHtml(l.source)}</span>
+        <span class="tag tag-service">⚙️ ${escHtml(l.service)}</span>
+      </div>
+      <select class="lead-stage-select" onchange="stageChange('${l.id}', this.value)">
+        <option value="new"       ${l.stage==='new'?'selected':''}>🟣 New</option>
+        <option value="contacted" ${l.stage==='contacted'?'selected':''}>🔵 Contacted</option>
+        <option value="qualified" ${l.stage==='qualified'?'selected':''}>🟡 Qualified</option>
+        <option value="closed"    ${l.stage==='closed'?'selected':''}>🟢 Closed</option>
+      </select>
+    </div>
+  `;
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ============================================================
+   DRAG AND DROP
+   ============================================================ */
+function attachCardDrag() {
+  document.querySelectorAll('.lead-card[draggable]').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      dragLeadId = card.dataset.id;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
+    });
+  });
+}
+
+function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function onDrop(e, stage) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragLeadId) return;
+  const leads = getLeads();
+  const lead = leads.find(l => l.id === dragLeadId);
+  if (lead && lead.stage !== stage) {
+    lead.stage = stage;
+    saveLeads(leads);
+    renderBoard();
+    showToast(`Lead moved to <strong>${stage}</strong>`, 'success');
+  }
+  dragLeadId = null;
+}
+
+function stageChange(id, stage) {
+  const leads = getLeads();
+  const lead = leads.find(l => l.id === id);
+  if (lead) { lead.stage = stage; saveLeads(leads); renderBoard(); showToast(`Stage updated to <strong>${stage}</strong>`); }
+}
+
+/* ============================================================
+   FILTER
+   ============================================================ */
+function setFilter(btn) {
+  activeFilter = btn.dataset.filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBoard();
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+function openModal(stage = 'new') {
+  editingLeadId = null;
+  defaultStage = stage;
+  document.getElementById('modal-title').textContent = '➕ Add New Lead';
+  document.getElementById('m-name').value = '';
+  document.getElementById('m-email').value = '';
+  document.getElementById('m-phone').value = '';
+  document.getElementById('m-company').value = '';
+  document.getElementById('m-notes').value = '';
+  document.getElementById('m-stage').value = stage;
+  document.getElementById('lead-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('lead-modal').classList.remove('open'); }
+
+function editLead(id) {
+  const lead = getLeads().find(l => l.id === id);
+  if (!lead) return;
+  editingLeadId = id;
+  document.getElementById('modal-title').textContent = '✏️ Edit Lead';
+  document.getElementById('m-name').value = lead.name;
+  document.getElementById('m-email').value = lead.email;
+  document.getElementById('m-phone').value = lead.phone || '';
+  document.getElementById('m-company').value = lead.company || '';
+  document.getElementById('m-source').value = lead.source;
+  document.getElementById('m-service').value = lead.service;
+  document.getElementById('m-stage').value = lead.stage;
+  document.getElementById('m-notes').value = lead.notes || '';
+  document.getElementById('lead-modal').classList.add('open');
+}
+
+function saveModalLead() {
+  const name = document.getElementById('m-name').value.trim();
+  const email = document.getElementById('m-email').value.trim();
+  if (!name || !email) { showToast('Name and email are required', 'info'); return; }
+  const leads = getLeads();
+  if (editingLeadId) {
+    const lead = leads.find(l => l.id === editingLeadId);
+    if (lead) {
+      lead.name = name; lead.email = email;
+      lead.phone = document.getElementById('m-phone').value.trim();
+      lead.company = document.getElementById('m-company').value.trim();
+      lead.source = document.getElementById('m-source').value;
+      lead.service = document.getElementById('m-service').value;
+      lead.stage = document.getElementById('m-stage').value;
+      lead.notes = document.getElementById('m-notes').value.trim();
+    }
+  } else {
+    leads.push({
+      id: uid(),
+      name, email,
+      phone: document.getElementById('m-phone').value.trim(),
+      company: document.getElementById('m-company').value.trim(),
+      source: document.getElementById('m-source').value,
+      service: document.getElementById('m-service').value,
+      stage: document.getElementById('m-stage').value,
+      notes: document.getElementById('m-notes').value.trim(),
+      createdAt: Date.now()
+    });
+  }
+  saveLeads(leads);
+  closeModal();
+  renderBoard();
+  showToast(editingLeadId ? '✅ Lead updated' : '✅ New lead added');
+}
+
+function deleteLead(id) {
+  const leads = getLeads().filter(l => l.id !== id);
+  saveLeads(leads);
+  renderBoard();
+  showToast('🗑️ Lead deleted', 'info');
+}
+
+/* ============================================================
+   LEAD CAPTURE
+   ============================================================ */
+function showCaptureForm() {
+  document.getElementById('capture-form-card').classList.add('visible');
+  document.getElementById('capture-form-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function submitCaptureLead() {
+  const name = document.getElementById('c-name').value.trim();
+  const email = document.getElementById('c-email').value.trim();
+  if (!name || !email) { showToast('Name and email required', 'info'); return; }
+  const leads = getLeads();
+  leads.push({
+    id: uid(),
+    name, email,
+    phone: document.getElementById('c-phone').value.trim(),
+    company: document.getElementById('c-company').value.trim(),
+    source: document.getElementById('c-source').value,
+    service: document.getElementById('c-service').value,
+    stage: 'new',
+    notes: 'Via Lead Capture Form',
+    createdAt: Date.now()
+  });
+  saveLeads(leads);
+  showToast('🎉 Lead captured! Check the dashboard.', 'success');
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-email').value = '';
+  document.getElementById('c-phone').value = '';
+  document.getElementById('c-company').value = '';
+  document.getElementById('capture-form-card').classList.remove('visible');
+}
+
+/* ============================================================
+   AI FOLLOW-UP GENERATOR (Pure JS)
+   ============================================================ */
+function selectPill(btn) {
+  const group = btn.dataset.group;
+  btn.closest('.option-pills').querySelectorAll('.option-pill').forEach(p => p.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function getSelected(group) {
+  const el = document.querySelector(`.option-pill.selected[data-group="${group}"]`);
+  return el ? el.textContent.replace(/[^\w\s]/g, '').trim() : '';
+}
+
+const greetings = {
+  Friendly: ['Hi', 'Hey', 'Hello'],
+  Professional: ['Dear', 'Hello', 'Good day,'],
+  Persuasive: ['Hi', 'Hello', 'Hey'],
+};
+const openers = {
+  'None – first contact': [
+    "I came across your profile and wanted to reach out personally.",
+    "I noticed you recently showed interest in growing your business online.",
+    "We help businesses like yours scale through smart digital strategies."
+  ],
+  'Attended a webinar': [
+    "It was great having you at our recent webinar!",
+    "Hope you found our webinar valuable and insightful.",
+    "Thank you for attending — your engagement really stood out."
+  ],
+  'Downloaded a resource': [
+    "I noticed you downloaded our resource and thought I'd follow up.",
+    "Hope you found our guide useful for your business goals.",
+    "Since you grabbed our guide, I figured a quick note would be helpful."
+  ],
+  'Replied to an email': [
+    "Thanks so much for taking the time to reply — it really means a lot.",
+    "Really appreciate your response — let's keep the momentum going!",
+    "Your reply made my day. Let me add a bit more value here."
+  ],
+  'Had a call': [
+    "It was genuinely great speaking with you earlier.",
+    "Following up on our call — I wanted to share a few more thoughts.",
+    "Our conversation really inspired me to put something together for you."
+  ],
+  'Requested a proposal': [
+    "Thank you for requesting our proposal — we've put a lot of thought into it.",
+    "Your proposal request is on its way — I wanted to give you a heads-up.",
+    "We've tailored a strategy specifically around your goals."
+  ],
+  'Went silent after quoting': [
+    "I know the timing might not have been right before — just checking in.",
+    "No pressure at all, just wanted to see if you had any questions on the quote.",
+    "Things get busy — totally understand. Wanted to pop back in."
+  ]
+};
+const closings = {
+  Friendly: [
+    "Would love to hop on a quick call and explore how we can help. What does your schedule look like?",
+    "Happy to answer any questions — no pressure at all. Just reply here 😊",
+    "Looking forward to hearing from you! A 15-minute chat can change a lot."
+  ],
+  Professional: [
+    "I would be happy to schedule a consultation at your earliest convenience.",
+    "Please let me know a time that works for you and we can proceed accordingly.",
+    "I look forward to hearing your thoughts and taking this forward."
+  ],
+  Persuasive: [
+    "Businesses that act now are seeing results 3x faster. Let's not let this opportunity slip.",
+    "I'd hate for you to miss the window — slots are filling up fast this month.",
+    "This is exactly what your competitors are doing. Let's get you ahead of the curve."
+  ]
+};
+const midSection = {
+  short: [],
+  Medium: [
+    "We've recently helped similar businesses in the {industry} space achieve measurable results with our {service} solutions.",
+    "Our approach to {service} is tailored — no cookie-cutter strategies, just what actually works for your business.",
+  ],
+  Long: [
+    "We've worked extensively with {industry} businesses and understand the unique challenges that come with scaling in your space. Our {service} strategies have consistently delivered strong ROI because we focus on what matters most to your bottom line.",
+    "What sets us apart isn't just our expertise in {service} — it's our commitment to understanding your business deeply before recommending anything. Every campaign we run is data-backed and results-focused.",
+    "In fact, one of our recent clients in {industry} saw a 40% increase in qualified leads within 60 days of working with us. I believe we can replicate — and even exceed — those results for {company}."
+  ]
+};
+
+function generateMessage() {
+  const name    = document.getElementById('f-name').value.trim() || 'there';
+  const email   = document.getElementById('f-email').value.trim();
+  const phone   = document.getElementById('f-phone').value.trim();
+  const company = document.getElementById('f-company').value.trim() || 'your company';
+  const industry = document.getElementById('f-industry').value;
+  const source   = document.getElementById('f-source').value;
+  const service  = document.getElementById('f-service').value;
+  const prev     = document.getElementById('f-prev').value;
+  const tone     = getSelected('tone').replace(/[^\w]/g,'').trim() || 'Friendly';
+  const length   = getSelected('length') || 'Medium';
+
+  const btn = document.querySelector('.generate-btn');
+  document.getElementById('gen-btn-text').textContent = '⏳ Generating...';
+  btn.classList.add('loading');
+
+  setTimeout(() => {
+    const g = pick(greetings[tone] || greetings.Friendly);
+    const o = pick(openers[prev] || openers['None – first contact']);
+    const c = pick(closings[tone] || closings.Friendly);
+    const mids = length === 'Short' ? [] : (midSection[length] || midSection.Medium);
+
+    let msg = `${g} ${name},\n\n${o}`;
+
+    if (mids.length) {
+      const m = pick(mids)
+        .replace(/{industry}/g, industry)
+        .replace(/{service}/g, service)
+        .replace(/{company}/g, company);
+      msg += `\n\n${m}`;
+    }
+
+    msg += `\n\n${c}`;
+    msg += `\n\nWarm regards,\nLeadPulse Team`;
+
+    if (length === 'Long') {
+      msg += `\n\nP.S. If ${service} isn't a priority right now, we also offer a free strategy session with zero obligations — just pure value for your business.`;
+    }
+
+    const out = document.getElementById('message-output');
+    out.style.display = 'block';
+    out.textContent = msg;
+    document.getElementById('output-placeholder').style.display = 'none';
+    document.getElementById('output-actions').style.display = 'flex';
+
+    document.getElementById('gen-btn-text').textContent = '⚡ Generate Follow-Up Message';
+    btn.classList.remove('loading');
+
+    // Store for send functions
+    window._generatedMsg = msg;
+    window._genPhone = phone;
+    window._genEmail = email;
+    window._genName = name;
+
+    showToast('✅ Message generated!', 'success');
+  }, 800);
+}
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function copyMessage() {
+  const msg = window._generatedMsg;
+  if (!msg) return;
+  navigator.clipboard.writeText(msg).then(() => showToast('📋 Copied to clipboard!'));
+}
+
+function sendWhatsApp() {
+  const phone = (window._genPhone || '').replace(/\s+/g,'').replace(/^\+/,'');
+  const msg = window._generatedMsg || '';
+  if (!phone) { showToast('Enter a phone number first', 'info'); return; }
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  showToast('📲 Opening WhatsApp...', 'success');
+}
+
+function sendEmail() {
+  const email = window._genEmail || '';
+  const msg = window._generatedMsg || '';
+  const name = window._genName || 'Lead';
+  if (!email) { showToast('Enter an email address first', 'info'); return; }
+  const subject = encodeURIComponent(`Following up — ${name}`);
+  const body = encodeURIComponent(msg);
+  window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+  showToast('📧 Opening email client...', 'success');
+}
+
+function prefillFollowUp(id) {
+  const lead = getLeads().find(l => l.id === id);
+  if (!lead) return;
+  switchView('followup', document.querySelectorAll('.nav-btn')[1]);
+  setTimeout(() => {
+    document.getElementById('f-name').value = lead.name;
+    document.getElementById('f-email').value = lead.email;
+    document.getElementById('f-phone').value = lead.phone || '';
+    document.getElementById('f-company').value = lead.company || '';
+    const svcMap = { 'SEO': 'SEO', 'Social Media': 'Social Media Marketing', 'Web Development': 'Web Development', 'PPC Ads': 'PPC Ads' };
+    document.getElementById('f-service').value = svcMap[lead.service] || 'SEO';
+    showToast('✅ Lead details pre-filled!', 'info');
+  }, 100);
+}
+
+/* ============================================================
+   CLOSE MODAL ON OVERLAY CLICK
+   ============================================================ */
+document.getElementById('lead-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+initTheme();
+seedDemoData();
+renderBoard();
+</script>
+</body>
+</html>
